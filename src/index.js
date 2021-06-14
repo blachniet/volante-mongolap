@@ -87,6 +87,7 @@ module.exports = {
       }
       let dimensions = req.body.dimensions || [];
       let measures = req.body.measures || [];
+      let sort = {};
 
       // GRANULARITY
       let granularity = req.body.granularity || 'all';
@@ -145,6 +146,9 @@ module.exports = {
             $second: `$${this.timestampKey}`
           };
         }
+        sort = {
+          _id: 1,
+        };
       }
       // process dimensions
       for (let d of dimensions) {
@@ -152,7 +156,6 @@ module.exports = {
         project[d] = true;
         group._id[d] = `$${d}`;
       }
-      let sort = {};
       // process measures
       for (let d of measures) {
         // treat count special since it's not actually in the docs
@@ -163,11 +166,13 @@ module.exports = {
           project[d.field] = true;
           group[d.field] = { $sum: `$${d.field}` };
         }
-        // SORT
-        if (d.sort === 'ascending') {
-          sort[d.field] = 1;
-        } else if (d.sort === 'descending') {
-          sort[d.field] = -1;
+        // SORT only for non-timeseries (granularity == 'all')
+        if (granularity === 'all') {
+          if (d.sort === 'ascending') {
+            sort[d.field] = 1;
+          } else if (d.sort === 'descending') {
+            sort[d.field] = -1;
+          }
         }
       }
 
