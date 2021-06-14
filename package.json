@@ -1,0 +1,20 @@
+{
+  "name": "volante-analytics",
+  "version": "1.0.0",
+  "description": "volante spoke to concentrate and query analytics data",
+  "author": "Mike Smiley <msmiley@alumni.rice.edu>",
+  "url": "https://github.com/msmiley/volante-analytics",
+  "repository": "msmiley/volante-analytics.git",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "volante": "^3.12.0",
+    "volante-console": "^2.3.2",
+    "volante-express": "^4.0.0",
+    "volante-mongo": "^6.2.1",
+    "volante-swagger": "^3.0.0"
+  },
+  "keywords": [
+    "volante"
+  ]
+}

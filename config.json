@@ -1,0 +1,21 @@
+{
+  "attach": [
+    "volante-console",
+    "volante-express",
+    "volante-swagger",
+    "volante-mongo"
+  ],
+  "VolanteExpress": {
+    "bind": "0.0.0.0",
+    "port": 5000
+  },
+  "VolanteSwagger": {
+    "title": "volante-analytics"
+  },
+  "VolanteMongo": {
+    "host": "localhost"
+  },
+  "VolanteAnalytics": {
+    "allowedNamespaces": []
+  }
+}
