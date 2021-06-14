@@ -1,7 +1,7 @@
 module.exports = {
   name: 'VolanteAnalytics',
   props: {
-    timestampKey: 'ts',
+    defaultTimestampField: 'ts',
     allowedNamespaces: [],
     routePrefix: '/api/volante-analytics',
     authModule: null,
@@ -30,6 +30,9 @@ module.exports = {
      *            schema:
      *              type: object
      *              properties:
+     *                timestampField:
+     *                  description: the field holding the timestamp, if different from default
+     *                  type: string
      *                startTime:
      *                  description: the start time for the query
      *                  type: string
@@ -87,6 +90,7 @@ module.exports = {
       }
       let dimensions = req.body.dimensions || [];
       let measures = req.body.measures || [];
+      let timestampField = req.body.timestampField || this.defaultTimestampField;
       let sort = {};
 
       // GRANULARITY
@@ -95,7 +99,7 @@ module.exports = {
       // MATCH STAGE
       let match = {};
       if (req.body.startTime && req.body.endTime) {
-        match[this.timestampKey] = {
+        match[timestampField] = {
           $gte: new Date(req.body.startTime),
           $lte: new Date(req.body.endTime)
         };
@@ -112,38 +116,38 @@ module.exports = {
       };
       if (granularity !== 'all') {
         // project the timestamp key if granularity is not 'all'
-        project[this.timestampKey] = true;
+        project[timestampField] = true;
         // this is the default granularity (day)
         group._id.year = {
-          $year: `$${this.timestampKey}`
+          $year: `$${timestampField}`
         };
         group._id.month = {
-          $month: `$${this.timestampKey}`
+          $month: `$${timestampField}`
         };
         group._id.day = {
-          $dayOfMonth: `$${this.timestampKey}`
+          $dayOfMonth: `$${timestampField}`
         };
         // handle the finer granularities by adding h:m:s
         if (granularity === 'hour') {
           group._id.hour = {
-            $hour: `$${this.timestampKey}`
+            $hour: `$${timestampField}`
           };
         } else if (granularity === 'minute') {
           group._id.hour = {
-            $hour: `$${this.timestampKey}`
+            $hour: `$${timestampField}`
           };
           group._id.minute = {
-            $minute: `$${this.timestampKey}`
+            $minute: `$${timestampField}`
           };
         } else if (granularity === 'second') {
           group._id.hour = {
-            $hour: `$${this.timestampKey}`
+            $hour: `$${timestampField}`
           };
           group._id.minute = {
-            $minute: `$${this.timestampKey}`
+            $minute: `$${timestampField}`
           };
           group._id.second = {
-            $second: `$${this.timestampKey}`
+            $second: `$${timestampField}`
           };
         }
         sort = {
@@ -258,9 +262,9 @@ module.exports = {
       if (this.allowedNamespaces.indexOf(req.params.namespace) < 0) {
         return res.status(400).send('invalid namespace');
       }
-      // ensure theres is a "timestampKey", if not set one with the current Date
-      if (!req.body[this.timestampKey]) {
-        req.body[this.timestampKey] = new Date();
+      // ensure theres is a "defaultTimestampField", if not set one with the current Date
+      if (!req.body[this.defaultTimestampField]) {
+        req.body[this.defaultTimestampField] = new Date();
       }
       // send the body to mongo
       this.$emit('mongo.insertOne', req.params.namespace, req.body, (err, rslt) => {
