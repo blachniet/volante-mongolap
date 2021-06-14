@@ -5,6 +5,7 @@
   "author": "Mike Smiley <msmiley@alumni.rice.edu>",
   "url": "https://github.com/msmiley/volante-analytics",
   "repository": "msmiley/volante-analytics.git",
+  "main": "./src",
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
