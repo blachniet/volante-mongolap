@@ -10,13 +10,6 @@ module.exports = {
   init() {
     this.router = require('express').Router();
 
-    // default to passthrough authentication, if user sets 'authModule' and 'authMethod'
-    // look that up through volante
-    let isAuthenticated = (req, res, next) => { next(); };
-    if (this.authModule && this.authMethod) {
-      isAuthenticated = this.$hub.get(this.authModule)[this.authMethod];
-    }
-
     /**
      * @openapi
      *  /api/volante-analytics/query/{namespace}:
@@ -86,7 +79,7 @@ module.exports = {
      *        - JWT: []
      */
     this.router.route(`${this.queryRoutePrefix}/query/:namespace`)
-    .all(isAuthenticated)
+    .all(this.authenticationProxy)
     .post((req, res) => {
       // check if specified namespace is allowed
       if (this.allowedNamespaces.indexOf(req.params.namespace) < 0) {
@@ -254,7 +247,7 @@ module.exports = {
      *        - JWT: []
      */
     this.router.route(`${this.queryRoutePrefix}/concentrator/:namespace`)
-    .all(isAuthenticated)
+    .all(this.authenticationProxy)
     .post((req, res) => {
       // check if specified namespace is allowed
       if (this.allowedNamespaces.indexOf(req.params.namespace) < 0) {
@@ -280,6 +273,17 @@ module.exports = {
     'VolanteExpress.pre-start'() {
       this.$log('adding router to VolanteExpress');
       this.$emit('VolanteExpress.use', this.router);
+    },
+  },
+  methods: {
+    authenticationProxy(req, res, next) {
+      // default to passthrough authentication, if user sets 'authModule' and 'authMethod'
+      // look that up through volante
+      if (this.authModule && this.authMethod) {
+        return this.$hub.get(this.authModule)[this.authMethod];
+      } else {
+        next();
+      }
     },
   },
 };
