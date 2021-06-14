@@ -280,7 +280,7 @@ module.exports = {
       // default to passthrough authentication, if user sets 'authModule' and 'authMethod'
       // look that up through volante
       if (this.authModule && this.authMethod) {
-        return this.$hub.get(this.authModule)[this.authMethod];
+        return this.$hub.get(this.authModule)[this.authMethod](req, res, next);
       } else {
         next();
       }
