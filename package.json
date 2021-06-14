@@ -1,6 +1,6 @@
 {
   "name": "volante-analytics",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "volante spoke to concentrate and query analytics data",
   "author": "Mike Smiley <msmiley@alumni.rice.edu>",
   "url": "https://github.com/msmiley/volante-analytics",
