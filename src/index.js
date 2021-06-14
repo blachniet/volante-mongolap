@@ -3,7 +3,7 @@ module.exports = {
   props: {
     timestampKey: 'ts',
     allowedNamespaces: [],
-    queryRoutePrefix: '/api/volante-analytics',
+    routePrefix: '/api/volante-analytics',
     authModule: null,
     authMethod: null,
   },
@@ -78,7 +78,7 @@ module.exports = {
      *      security:
      *        - JWT: []
      */
-    this.router.route(`${this.queryRoutePrefix}/query/:namespace`)
+    this.router.route(`${this.routePrefix}/query/:namespace`)
     .all(this.authenticationProxy)
     .post((req, res) => {
       // check if specified namespace is allowed
@@ -246,7 +246,7 @@ module.exports = {
      *      security:
      *        - JWT: []
      */
-    this.router.route(`${this.queryRoutePrefix}/concentrator/:namespace`)
+    this.router.route(`${this.routePrefix}/concentrator/:namespace`)
     .all(this.authenticationProxy)
     .post((req, res) => {
       // check if specified namespace is allowed
