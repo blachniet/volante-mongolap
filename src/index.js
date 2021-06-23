@@ -6,6 +6,8 @@ module.exports = {
     routePrefix: '/api/volante-analytics',
     authModule: null,
     authMethod: null,
+    countMeasure: 'count',
+    datesAsStrings: false,
   },
   init() {
     this.router = require('express').Router();
@@ -99,10 +101,17 @@ module.exports = {
       // MATCH STAGE
       let match = {};
       if (req.body.startTime && req.body.endTime) {
-        match[timestampField] = {
-          $gte: new Date(req.body.startTime),
-          $lte: new Date(req.body.endTime)
-        };
+        if (this.datesAsStrings) {
+          match[timestampField] = {
+            $gte: req.body.startTime,
+            $lte: req.body.endTime
+          };
+        } else {
+          match[timestampField] = {
+            $gte: new Date(req.body.startTime),
+            $lte: new Date(req.body.endTime)
+          };
+        }
       }
 
       // PROJECT STAGE
@@ -162,9 +171,10 @@ module.exports = {
       }
       // process measures
       for (let d of measures) {
-        // treat count special since it's not actually in the docs
-        if (d.field === 'count') {
-          group.count = { $sum: 1 };
+        // treat countMeasure special since it's not actually in the mongo documents,
+        // it's just a meta-count of the documents
+        if (d.field === this.countMeasure) {
+          group[this.countMeasure] = { $sum: 1 };
         } else {
           // add it to be projected
           project[d.field] = true;
