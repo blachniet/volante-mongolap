@@ -1,13 +1,13 @@
 module.exports = {
   name: 'VolanteAnalytics',
   props: {
-    defaultTimestampField: 'ts',
-    allowedNamespaces: [],
-    routePrefix: '/api/volante-analytics',
-    authModule: null,
-    authMethod: null,
-    countMeasure: 'count',
-    datesAsStrings: false,
+    defaultTimestampField: 'ts',           // the field to use for timestamps (only necessary if time-bounding)
+    allowedNamespaces: [],                 // set to limit the allowed namespaces
+    routePrefix: '/api/volante-analytics', // the route prefix to use
+    authModule: null,                      // name of volante module providing auth
+    authMethod: null,                      // name of auth module's auth method (should be express middleware method)
+    countMeasure: 'count',                 // name of the virtual-measure for the count of documents
+    datesAsStrings: false,                 // whether to treat the startTime and endTime params as strings
   },
   init() {
     this.router = require('express').Router();
@@ -86,9 +86,9 @@ module.exports = {
     this.router.route(`${this.routePrefix}/query/:namespace`)
     .all(this.authenticationProxy)
     .post((req, res) => {
-      // check if specified namespace is allowed
-      if (this.allowedNamespaces.indexOf(req.params.namespace) < 0) {
-        return res.status(400).send('invalid namespace');
+      // if allowedNamespaces was set, check if specified namespace is allowed
+      if (this.allowedNamespaces.length > 0 && this.allowedNamespaces.indexOf(req.params.namespace) < 0) {
+        return res.status(400).send('namespace not in allowedNamespaces');
       }
       let dimensions = req.body.dimensions || [];
       let measures = req.body.measures || [];
