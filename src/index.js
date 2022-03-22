@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'VolanteAnalytics',
+  name: 'VolanteMongoMetrics',
   props: {
     defaultTimestampField: 'ts',           // the field to use for timestamps (only necessary if time-bounding)
     allowedNamespaces: [],                 // set to limit the allowed namespaces
