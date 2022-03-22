@@ -1,11 +1,11 @@
-# Volante Analytics
+# Volante Mongo Metrics
 
-Volante Spoke module which handles concentrating and querying analytics data.
+Volante Spoke module for collecting and querying time-based metrics using mongo's aggregation pipeline.
 
 ## Usage
 
 ```bash
-npm install volante-analytics
+npm install volante-mongo-metrics
 ```
 
 
