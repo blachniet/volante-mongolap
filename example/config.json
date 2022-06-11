@@ -1,21 +1,27 @@
 {
+  "name": "volante-mongo-metrics-example",
   "attach": [
     "volante-console",
     "volante-express",
     "volante-swagger",
     "volante-mongo"
   ],
+  "attachLocal": [
+    "./src",
+    "./example/example"
+  ],
   "VolanteExpress": {
+    "autoStart": true,
     "bind": "0.0.0.0",
     "port": 5000
   },
   "VolanteSwagger": {
-    "title": "volante-analytics"
+    "title": "volante-mongo-metrics-example"
   },
   "VolanteMongo": {
     "host": "localhost"
   },
-  "VolanteAnalytics": {
+  "VolanteMongoMetrics": {
     "allowedNamespaces": []
   }
 }

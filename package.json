@@ -6,14 +6,16 @@
   "url": "https://github.com/msmiley/volante-mongo-metrics",
   "repository": "msmiley/volante-mongo-metrics.git",
   "main": "./src",
+  "scripts": {
+    "dev": "node example/index.js"
+  },
   "license": "ISC",
-  "dependencies": {},
   "devDependencies": {
-    "volante": "^3.12.0",
-    "volante-console": "^2.3.2",
-    "volante-express": "^4.0.0",
-    "volante-mongo": "^6.2.1",
-    "volante-swagger": "^3.0.0"
+    "volante": "^6.6.0",
+    "volante-console": "^4.1.0",
+    "volante-express": "^7.2.0",
+    "volante-mongo": "^9.3.0",
+    "volante-swagger": "^5.1.0"
   },
   "keywords": [
     "volante"
