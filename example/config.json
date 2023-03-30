@@ -1,25 +1,20 @@
 {
   "name": "volante-mongo-metrics-example",
+  "debug": true,
   "attach": [
     "volante-console",
-    "volante-express",
-    "volante-swagger",
-    "volante-mongo"
+    "volante-mongo",
+    "volante-utils"
   ],
   "attachLocal": [
     "./src",
     "./example/example"
   ],
-  "VolanteExpress": {
-    "autoStart": true,
-    "bind": "0.0.0.0",
-    "port": 5000
-  },
-  "VolanteSwagger": {
-    "title": "volante-mongo-metrics-example"
-  },
   "VolanteMongo": {
-    "host": "localhost"
+    "host": "127.0.0.1",
+    "namespaces": {
+      "testMetrics": "volante-mongo-metrics-example.testMetrics"
+    }
   },
   "VolanteMongoMetrics": {
     "allowedNamespaces": []
