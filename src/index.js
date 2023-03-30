@@ -1,7 +1,6 @@
 module.exports = {
   name: 'VolanteMongoMetrics',
   props: {
-    defaultTimestampField: 'ts', // the field to use for timestamps (only necessary if time-bounding)
     allowedNamespaces: [],       // IMPORTANT: limit the allowed mongo namespaces, make sure you set this,
                                  //            leaving it empty could be a security risk as it may allow
                                  //            access from client-side
@@ -28,6 +27,7 @@ module.exports = {
       // send the body to mongo
       return this.$.VolanteMongo.insertOne(namespace, metric);
     },
+    // run a query using the parameters described below
     query({ namespace,           // required, the namespace to query
             startTime,           // optional
             endTime,             // optional
