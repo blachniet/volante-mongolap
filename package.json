@@ -1,6 +1,6 @@
 {
   "name": "volante-mongo-metrics",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "volante spoke to collect and query metrics using mongo aggregation",
   "author": "Mike Smiley <msmiley@alumni.rice.edu>",
   "url": "https://github.com/msmiley/volante-mongo-metrics",
