@@ -26,6 +26,9 @@ module.exports = {
       // ensure theres is a ts field, if not set one with the current Date
       if (!doc[timestampField]) {
         doc[timestampField] = new Date();
+      } else if (typeof doc[timestampField] === 'string') {
+        // attempt to convert to date if string
+        doc[timestampField] = new Date(doc[timestampField]);
       }
       // send the doc to mongo
       return this.$.VolanteMongo.insertOne(namespace, doc);
@@ -35,7 +38,7 @@ module.exports = {
             startTime,           // optional
             endTime,             // optional
             dimensions=[],       // array of string field names
-            measures=[],         // { 'field':, 'sort': }
+            measures=[],         // { 'field':, 'sort': ascending/descending }
             timestampField='ts', // optional, only for non-standard ts fields
             granularity='all',   // all/hour/minute/second
             limit,               // limit results
@@ -50,18 +53,24 @@ module.exports = {
 
       // MATCH STAGE
       let match = {};
+
       if (startTime && endTime) {
         if (this.datesAsStrings) {
           match[timestampField] = {
             $gte: startTime,
-            $lte: endTime
+            $lte: endTime,
+            $type: 'date',
           };
         } else {
           match[timestampField] = {
             $gte: new Date(startTime),
-            $lte: new Date(endTime)
+            $lte: new Date(endTime),
+            $type: 'date',
           };
         }
+      } else {
+        // ensure that the timestamp field exists
+        match[timestampField] = { $exists: true, $type: 'date' };
       }
 
       // PROJECT STAGE
@@ -137,7 +146,7 @@ module.exports = {
           }
         }
       }
-
+      // build pipeline
       let pipeline = [
         { $match: match },
         { $project: project },
@@ -182,6 +191,11 @@ module.exports = {
           delete d._id;
         }
         return docs;
+      }).catch((err) => {
+        if (debug) {
+          this.$warn(err);
+        }
+        throw err;
       });
     }
   },
