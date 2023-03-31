@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'VolanteMongoMetrics',
+  name: 'VolanteMongolap',
   props: {
     allowedNamespaces: [],       // IMPORTANT: limit the allowed mongo namespaces, make sure you set this,
                                  //            leaving it empty could be a security risk as it may allow
@@ -9,23 +9,26 @@ module.exports = {
   },
   events: {
     // event bridge to insert with no response
-    'VolanteMongoMetrics.insert'({ namespace, metric }) {
-      this.insert({}, { namespace, metric });
+    'VolanteMongolap.insert'(args) {
+      this.insert(args);
     },
   },
   methods: {
-    insert({ namespace, metric, timestampField='ts' }) {
+    insert({ namespace,          // required, the namespace to insert into
+             doc,                // document to insert
+             timestampField='ts' // default timestamp field, will be created if not in doc
+           }) {
       // check if specified namespace is allowed
       if (this.allowedNamespaces.length > 0 &&
           this.allowedNamespaces.indexOf(namespace) < 0) {
         return Promise.reject('invalid namespace');
       }
       // ensure theres is a ts field, if not set one with the current Date
-      if (!metric[timestampField]) {
-        metric[timestampField] = new Date();
+      if (!doc[timestampField]) {
+        doc[timestampField] = new Date();
       }
-      // send the body to mongo
-      return this.$.VolanteMongo.insertOne(namespace, metric);
+      // send the doc to mongo
+      return this.$.VolanteMongo.insertOne(namespace, doc);
     },
     // run a query using the parameters described below
     query({ namespace,           // required, the namespace to query
@@ -36,7 +39,8 @@ module.exports = {
             timestampField='ts', // optional, only for non-standard ts fields
             granularity='all',   // all/hour/minute/second
             limit,               // limit results
-            debug }) {
+            debug                // print out pipeline sent to mongo for debug purposes
+          }) {
       // if allowedNamespaces was set, check if specified namespace is allowed
       if (this.allowedNamespaces.length > 0 && this.allowedNamespaces.indexOf(namespace) < 0) {
         return Promise.reject('namespace not in allowedNamespaces');
