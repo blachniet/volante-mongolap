@@ -5,7 +5,6 @@ module.exports = {
                                  //            leaving it empty could be a security risk as it may allow
                                  //            access from client-side
     countMeasure: 'count',       // name of the virtual-measure for the count of documents
-    datesAsStrings: false,       // whether to treat the startTime and endTime params as strings
   },
   events: {
     // event bridge to insert with no response
@@ -13,11 +12,64 @@ module.exports = {
       this.insert(args);
     },
   },
+  data() {
+    return {
+      rangePresets: {
+        '1 Minute'() {
+          return new Date(Date.now() - 6e4);
+        },
+        '1 Hour'() {
+          return new Date(Date.now() - 36e5);
+        },
+        '12 Hours'() {
+          return new Date(Date.now() - 432e5);
+        },
+        '24 Hours'() {
+          return new Date(Date.now() - 864e5);
+        },
+        '3 Days'() {
+          return new Date(Date.now() - 2592e5);
+        },
+        '7 Days'() {
+          return new Date(Date.now() - 6048e5);
+        },
+        '14 Days'() {
+          return new Date(Date.now() - 12096e5);
+        },
+        '30 Days'() {
+          return new Date(Date.now() - 2592e6);
+        },
+        '90 Days'() {
+          return new Date(Date.now() - 7776e6);
+        },
+        '180 Days'() {
+          return new Date(Date.now() - 15552e6);
+        },
+        '1 Year'() {
+          return new Date(Date.now() - 31536e6);
+        },
+        'All Time'() {
+          return new Date(0);
+        },
+      },
+    };
+  },
   methods: {
-    insert({ namespace,          // required, the namespace to insert into
-             doc,                // document to insert
-             timestampField='ts' // default timestamp field, will be created if not in doc
-           }) {
+    //
+    // Return formatted range preset names for use in a UI
+    //
+    getRangePresets() {
+      return Object.keys(this.rangePresets);
+    },
+    //
+    // insert a record into the specified namespace, ensures
+    // that the namespace is allowed and that a valid timestamp field exists
+    //
+    insert({
+      namespace,          // required, the namespace to insert into
+      doc={},             // document to insert
+      timestampField='ts' // default timestamp field, will be created if not in doc
+    }) {
       // check if specified namespace is allowed
       if (this.allowedNamespaces.length > 0 &&
           this.allowedNamespaces.indexOf(namespace) < 0) {
@@ -31,19 +83,24 @@ module.exports = {
         doc[timestampField] = new Date(doc[timestampField]);
       }
       // send the doc to mongo
-      return this.$.VolanteMongo.insertOne(namespace, doc);
+      return this.$.VolanteMongo.insertOne(namespace, doc).catch((err) => {
+        this.$warn('error on insert', err);
+        throw err;
+      });
     },
-    // run a query using the parameters described below
-    query({ namespace,           // required, the namespace to query
-            startTime,           // optional
-            endTime,             // optional
-            dimensions=[],       // array of string field names
-            measures=[],         // { 'field':, 'sort': ascending/descending }
-            timestampField='ts', // optional, only for non-standard ts fields
-            granularity='all',   // all/hour/minute/second
-            limit,               // limit results
-            debug                // print out pipeline sent to mongo for debug purposes
-          }) {
+    //
+    // run a query against the specified namespace using the parameters described below
+    //
+    query({
+      namespace,           // required, the namespace to query
+      range,               // optional time range, either key from rangePresets or array or string dates or Date objects: ['st', 'et']
+      dimensions=[],       // { field: '', op: '$in/$nin/$regex/etc.', value: Object/String } (only field is required)
+      measures=[],         // { field: '', sort: 'ascending/descending', op: '$sum/$min/$max/$avg/etc.' } (only field is required)
+      timestampField='ts', // optional, only for non-standard ts fields
+      granularity='all',   // all/hour/minute/second
+      limit,               // limit results
+      debug                // print out pipeline sent to mongo for debug purposes
+    }) {
       // if allowedNamespaces was set, check if specified namespace is allowed
       if (this.allowedNamespaces.length > 0 && this.allowedNamespaces.indexOf(namespace) < 0) {
         return Promise.reject('namespace not in allowedNamespaces');
@@ -53,23 +110,25 @@ module.exports = {
 
       // MATCH STAGE
       let match = {};
-
-      if (startTime && endTime) {
-        if (this.datesAsStrings) {
-          match[timestampField] = {
-            $gte: startTime,
-            $lte: endTime,
-            $type: 'date',
-          };
+      // add time filtering first
+      if (range) {
+        let startTime, endTime;
+        if (typeof(range) === 'string' && this.rangePresets[range]) {
+          startTime = this.rangePresets[range]();
+          endTime = new Date();
         } else {
-          match[timestampField] = {
-            $gte: new Date(startTime),
-            $lte: new Date(endTime),
-            $type: 'date',
-          };
+          // let Date try to parse the times
+          // to make sure they're in the right format
+          startTime = new Date(range[0]);
+          endTime = new Date(range[1]);
         }
+        match[timestampField] = {
+          $gte: startTime,
+          $lte: endTime,
+          $type: 'date',
+        };
       } else {
-        // ensure that the timestamp field exists
+        // at least ensure that the timestamp field exists in results
         match[timestampField] = { $exists: true, $type: 'date' };
       }
 
@@ -121,28 +180,35 @@ module.exports = {
         sort._id = 1;
       }
       // process dimensions
-      for (let d of dimensions) {
-        // add it to be projected
-        project[d] = true;
-        group._id[d] = `$${d}`;
+      for (let dim of dimensions) {
+        // add any specified filtering op
+        if (dim.op) {
+          match[dim.field] = { [dim.op]: dim.value };
+        }
+        // add the field to projections to be projected
+        project[dim.field] = true;
+        // add it to be grouped
+        group._id[dim.field] = `$${dim.field}`;
       }
       // process measures
-      for (let d of measures) {
+      for (let meas of measures) {
         // treat countMeasure special since it's not actually in the mongo documents,
         // it's just a meta-count of the documents
-        if (d.field === this.countMeasure) {
+        if (meas.field === this.countMeasure) {
           group[this.countMeasure] = { $sum: 1 };
-        } else {
+        } else { // user measure
           // add it to be projected
-          project[d.field] = true;
-          group[d.field] = { $sum: `$${d.field}` };
+          project[meas.field] = true;
+          let op = meas.op || '$sum';
+          // add to group with user-specified operation or default to $sum
+          group[meas.field] = { [op]: `$${meas.field}` };
         }
         // SORT only for non-timeseries (granularity == 'all')
         if (granularity === 'all') {
-          if (d.sort === 'ascending') {
-            sort[d.field] = 1;
-          } else if (d.sort === 'descending') {
-            sort[d.field] = -1;
+          if (meas.sort === 'ascending') {
+            sort[meas.field] = 1;
+          } else if (meas.sort === 'descending') {
+            sort[meas.field] = -1;
           }
         }
       }
@@ -185,7 +251,7 @@ module.exports = {
           }
           // promote dimension fields
           for (let dim of dimensions) {
-            d[dim] = d._id[dim];
+            d[dim.field] = d._id[dim.field];
           }
           // remove _id completely
           delete d._id;

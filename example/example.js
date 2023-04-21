@@ -3,6 +3,7 @@ module.exports = {
   events: {
     'VolanteMongo.ready'() {
       this.startTimers();
+      this.$debug('Range Presets', this.$.VolanteMongolap.getRangePresets());
     },
   },
   methods: {
@@ -13,24 +14,27 @@ module.exports = {
     sendMetric() {
       this.$log('sending metric');
       // send metric, let volante-mongo-metrics add the timestamp
-      this.$.VolanteMongoMetrics.insert({
+      this.$.VolanteMongolap.insert({
         namespace: 'testMetrics',
-        metric: {
-          example: 'hello world 2',
+        doc: {
+          example: 'hello world 1',
           value: this.$.VolanteUtils.randomInteger(),
         },
       });
     },
     async queryMetrics() {
       this.$log('querying metrics');
-      let results = await this.$.VolanteMongoMetrics.query({
+      let results = await this.$.VolanteMongolap.query({
         namespace: 'testMetrics',
-        dimensions: ['example'],
+        range: '1 Minute',
+        dimensions: [{
+          field: 'example',
+        }],
         measures: [{
           field: 'value',
-          sort: 'descending'
-        }],
-        granularity: 'minute',
+          sort: 'descending',
+        }, { field: 'count' }],
+        granularity: 'all',
         debug: true,
       });
       this.$log(results);

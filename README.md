@@ -1,12 +1,14 @@
-# Volante Mongo Metrics
+# Volante MongOLAP
 
-Volante Spoke module for collecting and querying time-based metrics using mongo's aggregation pipeline.
+Volante Spoke module for collecting and querying OLAP-style metrics using mongo's aggregation pipeline.
 
 ## Usage
 
 ```bash
-npm install volante-mongo-metrics
+npm install volante-mongolap
 ```
+
+See example folder for example usage.
 
 
 ## License

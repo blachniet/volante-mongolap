@@ -1,5 +1,5 @@
 {
-  "name": "volante-mongo-metrics-example",
+  "name": "volante-mongolap-example",
   "debug": true,
   "attach": [
     "volante-console",
@@ -13,7 +13,7 @@
   "VolanteMongo": {
     "host": "127.0.0.1",
     "namespaces": {
-      "testMetrics": "volante-mongo-metrics-example.testMetrics"
+      "testMetrics": "volante-mongolap-example.testMetrics"
     }
   },
   "VolanteMongoMetrics": {
