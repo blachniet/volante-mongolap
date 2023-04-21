@@ -1,6 +1,6 @@
 {
   "name": "volante-mongolap",
-  "version": "3.1.2",
+  "version": "4.0.0",
   "description": "OLAP-style queries using mongo aggregation pipeline",
   "author": "Mike Smiley <msmiley@alumni.rice.edu>",
   "url": "https://github.com/msmiley/volante-mongolap",
