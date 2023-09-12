@@ -3,7 +3,7 @@ module.exports = {
   props: {
     allowedNamespaces: [],       // IMPORTANT: limit the allowed mongo namespaces, make sure you set this,
                                  //            leaving it empty could be a security risk as it may allow
-                                 //            access from client-side
+                                 //            access to all collections from client-side
     timestampField: 'ts',        // default name for the datetime field
     countMeasure: 'count',       // name of the virtual-measure for the count of documents
   },
@@ -94,7 +94,7 @@ module.exports = {
     query({
       namespace,             // required, the namespace to query
       range,                 // optional time range, either key from rangePresets or array or string dates or Date objects: ['st', 'et']
-      dimensions = [],       // { field: '', op: '$in/$nin/$regex/etc.', value: Object/String } (only field is required)
+      dimensions = [],       // { field: '', op: '$in/$nin/$regex/etc.', value: Object/String } (only field is required, op and value set up filtering)
       measures = [],         // { field: '', sort: 'ascending/descending', op: '$sum/$min/$max/$avg/etc.' } (only field is required)
       granularity = 'all',   // all/hour/minute/second
       limit,                 // limit results
@@ -233,19 +233,19 @@ module.exports = {
       return this.$.VolanteMongo.aggregate(namespace, pipeline).then((docs) => {
         // post-processing
         for (let d of docs) {
-          // convert date fields back to timestamps
+          // convert binned date fields back to timestamps
           switch (granularity) {
             case 'day':
-              d.ts = new Date(d._id.year, d._id.month, d._id.day);
+              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day);
               break;
             case 'hour':
-              d.ts = new Date(d._id.year, d._id.month, d._id.day, d._id.hour);
+              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day, d._id.hour);
               break;
             case 'minute':
-              d.ts = new Date(d._id.year, d._id.month, d._id.day, d._id.hour, d._id.minute);
+              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day, d._id.hour, d._id.minute);
               break;
             case 'second':
-              d.ts = new Date(d._id.year, d._id.month, d._id.day, d._id.hour, d._id.minute, d._id.second);
+              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day, d._id.hour, d._id.minute, d._id.second);
               break;
           }
           // promote dimension fields
