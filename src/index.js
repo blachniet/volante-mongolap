@@ -236,16 +236,16 @@ module.exports = {
           // convert binned date fields back to timestamps
           switch (granularity) {
             case 'day':
-              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day);
+              d[this.timestampField] = new Date(d._id.year, d._id.month-1, d._id.day);
               break;
             case 'hour':
-              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day, d._id.hour);
+              d[this.timestampField] = new Date(d._id.year, d._id.month-1, d._id.day, d._id.hour);
               break;
             case 'minute':
-              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day, d._id.hour, d._id.minute);
+              d[this.timestampField] = new Date(d._id.year, d._id.month-1, d._id.day, d._id.hour, d._id.minute);
               break;
             case 'second':
-              d[this.timestampField] = new Date(d._id.year, d._id.month, d._id.day, d._id.hour, d._id.minute, d._id.second);
+              d[this.timestampField] = new Date(d._id.year, d._id.month-1, d._id.day, d._id.hour, d._id.minute, d._id.second);
               break;
           }
           // promote dimension fields
