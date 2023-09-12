@@ -4,6 +4,7 @@ module.exports = {
     allowedNamespaces: [],       // IMPORTANT: limit the allowed mongo namespaces, make sure you set this,
                                  //            leaving it empty could be a security risk as it may allow
                                  //            access from client-side
+    timestampField: 'ts',        // default name for the datetime field
     countMeasure: 'count',       // name of the virtual-measure for the count of documents
   },
   events: {
@@ -67,8 +68,7 @@ module.exports = {
     //
     insert({
       namespace,          // required, the namespace to insert into
-      doc={},             // document to insert
-      timestampField='ts' // default timestamp field, will be created if not in doc
+      doc = {},             // document to insert
     }) {
       // check if specified namespace is allowed
       if (this.allowedNamespaces.length > 0 &&
@@ -76,30 +76,29 @@ module.exports = {
         return Promise.reject('invalid namespace');
       }
       // ensure theres is a ts field, if not set one with the current Date
-      if (!doc[timestampField]) {
-        doc[timestampField] = new Date();
-      } else if (typeof doc[timestampField] === 'string') {
+      if (!doc[this.timestampField]) {
+        doc[this.timestampField] = new Date();
+      } else if (typeof doc[this.timestampField] === 'string') {
         // attempt to convert to date if string
-        doc[timestampField] = new Date(doc[timestampField]);
+        doc[this.timestampField] = new Date(doc[this.timestampField]);
       }
       // send the doc to mongo
       return this.$.VolanteMongo.insertOne(namespace, doc).catch((err) => {
         this.$warn('error on insert', err);
-        throw err;
+        return Promise.reject(err);
       });
     },
     //
     // run a query against the specified namespace using the parameters described below
     //
     query({
-      namespace,           // required, the namespace to query
-      range,               // optional time range, either key from rangePresets or array or string dates or Date objects: ['st', 'et']
-      dimensions=[],       // { field: '', op: '$in/$nin/$regex/etc.', value: Object/String } (only field is required)
-      measures=[],         // { field: '', sort: 'ascending/descending', op: '$sum/$min/$max/$avg/etc.' } (only field is required)
-      timestampField='ts', // optional, only for non-standard ts fields
-      granularity='all',   // all/hour/minute/second
-      limit,               // limit results
-      debug                // print out pipeline sent to mongo for debug purposes
+      namespace,             // required, the namespace to query
+      range,                 // optional time range, either key from rangePresets or array or string dates or Date objects: ['st', 'et']
+      dimensions = [],       // { field: '', op: '$in/$nin/$regex/etc.', value: Object/String } (only field is required)
+      measures = [],         // { field: '', sort: 'ascending/descending', op: '$sum/$min/$max/$avg/etc.' } (only field is required)
+      granularity = 'all',   // all/hour/minute/second
+      limit,                 // limit results
+      debug                  // print out pipeline sent to mongo for debug purposes
     }) {
       // if allowedNamespaces was set, check if specified namespace is allowed
       if (this.allowedNamespaces.length > 0 && this.allowedNamespaces.indexOf(namespace) < 0) {
@@ -122,14 +121,14 @@ module.exports = {
           startTime = new Date(range[0]);
           endTime = new Date(range[1]);
         }
-        match[timestampField] = {
+        match[this.timestampField] = {
           $gte: startTime,
           $lte: endTime,
           $type: 'date',
         };
       } else {
         // at least ensure that the timestamp field exists in results
-        match[timestampField] = { $exists: true, $type: 'date' };
+        match[this.timestampField] = { $exists: true, $type: 'date' };
       }
 
       // PROJECT STAGE
@@ -143,38 +142,38 @@ module.exports = {
       };
       if (granularity !== 'all') {
         // project the timestamp key if granularity is not 'all'
-        project[timestampField] = true;
+        project[this.timestampField] = true;
         // this is the default granularity (day)
         group._id.year = {
-          $year: `$${timestampField}`
+          $year: `$${this.timestampField}`
         };
         group._id.month = {
-          $month: `$${timestampField}`
+          $month: `$${this.timestampField}`
         };
         group._id.day = {
-          $dayOfMonth: `$${timestampField}`
+          $dayOfMonth: `$${this.timestampField}`
         };
         // handle the finer granularities by adding h:m:s
         if (granularity === 'hour') {
           group._id.hour = {
-            $hour: `$${timestampField}`
+            $hour: `$${this.timestampField}`
           };
         } else if (granularity === 'minute') {
           group._id.hour = {
-            $hour: `$${timestampField}`
+            $hour: `$${this.timestampField}`
           };
           group._id.minute = {
-            $minute: `$${timestampField}`
+            $minute: `$${this.timestampField}`
           };
         } else if (granularity === 'second') {
           group._id.hour = {
-            $hour: `$${timestampField}`
+            $hour: `$${this.timestampField}`
           };
           group._id.minute = {
-            $minute: `$${timestampField}`
+            $minute: `$${this.timestampField}`
           };
           group._id.second = {
-            $second: `$${timestampField}`
+            $second: `$${this.timestampField}`
           };
         }
         sort._id = 1;
@@ -261,7 +260,7 @@ module.exports = {
         if (debug) {
           this.$warn(err);
         }
-        throw err;
+        return Promise.reject(err);
       });
     }
   },
