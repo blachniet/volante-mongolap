@@ -62,6 +62,23 @@ module.exports = {
     getRangePresets() {
       return Object.keys(this.rangePresets);
     },
+    generateRangeFilter(range) {
+      let startTime, endTime;
+      if (typeof(range) === 'string' && this.rangePresets[range]) {
+        startTime = this.rangePresets[range]();
+        endTime = new Date();
+      } else {
+        // let Date try to parse the times
+        // to make sure they're in the right format
+        startTime = new Date(range[0]);
+        endTime = new Date(range[1]);
+      }
+      return {
+        $gte: startTime,
+        $lte: endTime,
+        $type: 'date',
+      };
+    }
     //
     // insert a record into the specified namespace, ensures
     // that the namespace is allowed and that a valid timestamp field exists
@@ -111,21 +128,7 @@ module.exports = {
       let match = {};
       // add time filtering first
       if (range) {
-        let startTime, endTime;
-        if (typeof(range) === 'string' && this.rangePresets[range]) {
-          startTime = this.rangePresets[range]();
-          endTime = new Date();
-        } else {
-          // let Date try to parse the times
-          // to make sure they're in the right format
-          startTime = new Date(range[0]);
-          endTime = new Date(range[1]);
-        }
-        match[this.timestampField] = {
-          $gte: startTime,
-          $lte: endTime,
-          $type: 'date',
-        };
+        match[this.timestampField] = this.generateRangeFilter(range);
       } else {
         // at least ensure that the timestamp field exists in results
         match[this.timestampField] = { $exists: true, $type: 'date' };
@@ -304,7 +307,45 @@ module.exports = {
           [this.timestampField]: sort,
         },
         limit,
+      }).then((docs) => {
+        // manually set our virtual countMeasure to 1 in the results
+        for (let d of docs) {
+          d[this.countMeasure] = 1;
+        }
       });
     },
+    values({
+      namespace,             // required, the namespace to query
+      range,                 // optional time range, either a key from rangePresets or array or string dates or Date objects: ['st', 'et']
+      field,                 // field name to use for return values
+      searchTerm,            // simple contains search
+    }) {
+      // MATCH STAGE
+      let match = {};
+      // add time filtering first
+      if (range) {
+        match[this.timestampField] = this.generateRangeFilter(range);
+      } else {
+        // at least ensure that the timestamp field exists in results
+        match[this.timestampField] = { $exists: true, $type: 'date' };
+      }
+      let pipeline = [
+        { $match: match },
+        {
+          $group: {
+            _id: `$${field}`,
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            value: "$_id",
+            count: 1,
+          },
+        },
+      ];
+      return this.$.VolanteMongo.aggregate(namespace, pipeline);
+    }
   },
 };
