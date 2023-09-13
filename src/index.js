@@ -343,7 +343,7 @@ module.exports = {
         match[this.timestampField] = { $exists: true, $type: 'date' };
       }
       if (regex) {
-        match[this.field] = { $regex: regex, $options: 'i' };
+        match[field] = { $regex: regex, $options: 'i' };
       }
       let pipeline = [
         { $match: match },
