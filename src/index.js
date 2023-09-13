@@ -272,6 +272,7 @@ module.exports = {
     scan({
       namespace,             // required, the namespace to query
       range,                 // optional time range, either a key from rangePresets or array or string dates or Date objects: ['st', 'et']
+      dimensions = [],       // { field: '', op: '$in/$nin/$regex/etc.', value: Object/String } (only field is required, op and value set up filtering)
       limit = 100,           // limit results, set null to return all
       order,                 // timestampField sort order descending/ascending(default)
     }) {
@@ -280,6 +281,7 @@ module.exports = {
         return Promise.reject('namespace not in allowedNamespaces');
       }
       let filter = {};
+      // set up time range filtering
       if (range) {
         let startTime, endTime;
         if (typeof(range) === 'string' && this.rangePresets[range]) {
@@ -297,6 +299,14 @@ module.exports = {
           $type: 'date',
         };
       }
+      // process dimension filters
+      for (let dim of dimensions) {
+        // add any specified filtering op
+        if (dim.op) {
+          filter[dim.field] = { [dim.op]: dim.value };
+        }
+      }
+      // set sort order
       let sort = 1;
       if (order === 'descending') {
         sort = -1;
