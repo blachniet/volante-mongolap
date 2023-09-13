@@ -78,7 +78,7 @@ module.exports = {
         $lte: endTime,
         $type: 'date',
       };
-    }
+    },
     //
     // insert a record into the specified namespace, ensures
     // that the namespace is allowed and that a valid timestamp field exists
@@ -312,6 +312,7 @@ module.exports = {
         for (let d of docs) {
           d[this.countMeasure] = 1;
         }
+        return docs;
       });
     },
     values({
