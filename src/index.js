@@ -329,7 +329,9 @@ module.exports = {
       namespace,             // required, the namespace to query
       range,                 // optional time range, either a key from rangePresets or array or string dates or Date objects: ['st', 'et']
       field,                 // field name to use for return values
-      searchTerm,            // simple contains search
+      regex,                 // regex search for field value
+      limit,                 // limit results
+      debug                  // print out pipeline sent to mongo for debug purposes
     }) {
       // MATCH STAGE
       let match = {};
@@ -339,6 +341,9 @@ module.exports = {
       } else {
         // at least ensure that the timestamp field exists in results
         match[this.timestampField] = { $exists: true, $type: 'date' };
+      }
+      if (regex) {
+        match[this.field] = { $regex: this.regex, $options: 'i' };
       }
       let pipeline = [
         { $match: match },
@@ -356,6 +361,14 @@ module.exports = {
           },
         },
       ];
+      // LIMIT
+      if (limit) {
+        pipeline.push({ $limit: parseInt(limit, 10) });
+      }
+      // DEBUG print out pipeline for debug: true
+      if (debug) {
+        this.$debug(namespace, pipeline);
+      }
       return this.$.VolanteMongo.aggregate(namespace, pipeline);
     }
   },
