@@ -10,6 +10,7 @@ module.exports = {
     startTimers() {
       setInterval(this.sendMetric, 1000);
       setInterval(this.queryMetrics, 2000);
+      setInterval(this.scanMetrics, 2000);
     },
     sendMetric() {
       this.$log('sending metric');
@@ -36,6 +37,15 @@ module.exports = {
         }, { field: 'count' }],
         granularity: 'all',
         debug: true,
+      });
+      this.$log(results);
+    },
+    async scanMetrics() {
+      this.$log('scanning metrics');
+      let results = await this.$.VolanteMongolap.scan({
+        namespace: 'testMetrics',
+        range: '1 Minute',
+        limit: 2,
       });
       this.$log(results);
     },

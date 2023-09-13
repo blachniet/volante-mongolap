@@ -93,7 +93,7 @@ module.exports = {
     //
     query({
       namespace,             // required, the namespace to query
-      range,                 // optional time range, either key from rangePresets or array or string dates or Date objects: ['st', 'et']
+      range,                 // optional time range, either a key from rangePresets or array or string dates or Date objects: ['st', 'et']
       dimensions = [],       // { field: '', op: '$in/$nin/$regex/etc.', value: Object/String } (only field is required, op and value set up filtering)
       measures = [],         // { field: '', sort: 'ascending/descending', op: '$sum/$min/$max/$avg/etc.' } (only field is required)
       granularity = 'all',   // all/hour/minute/second
@@ -262,6 +262,49 @@ module.exports = {
         }
         return Promise.reject(err);
       });
-    }
+    },
+    //
+    // Run a table scan, returns complete documents within the time range and limit
+    //
+    scan({
+      namespace,             // required, the namespace to query
+      range,                 // optional time range, either a key from rangePresets or array or string dates or Date objects: ['st', 'et']
+      limit = 100,           // limit results, set null to return all
+      order,                 // timestampField sort order descending/ascending(default)
+    }) {
+      // if allowedNamespaces was set, check if specified namespace is allowed
+      if (this.allowedNamespaces.length > 0 && this.allowedNamespaces.indexOf(namespace) < 0) {
+        return Promise.reject('namespace not in allowedNamespaces');
+      }
+      let filter = {};
+      if (range) {
+        let startTime, endTime;
+        if (typeof(range) === 'string' && this.rangePresets[range]) {
+          startTime = this.rangePresets[range]();
+          endTime = new Date();
+        } else {
+          // let Date try to parse the times
+          // to make sure they're in the right format
+          startTime = new Date(range[0]);
+          endTime = new Date(range[1]);
+        }
+        filter[this.timestampField] = {
+          $gte: startTime,
+          $lte: endTime,
+          $type: 'date',
+        };
+      }
+      let sort = 1;
+      if (order === 'descending') {
+        sort = -1;
+      }
+      // send the query to mongo
+      return this.$.VolanteMongo.find(namespace, filter, {
+        sort: {
+          [this.timestampField]: sort,
+        },
+        limit,
+      });
+    },
   },
 };
